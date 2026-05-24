@@ -9,6 +9,7 @@
   --color-primary-color: #212025;
   --color-background-main: #1b1a1d;
   --color-gray-main: #2c2c30;
+  --color-gray-subtle: #929292;
 }
 :root {
   font-family: 'Inter', sans-serif;

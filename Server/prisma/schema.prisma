@@ -4,20 +4,21 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  
 }
 
-model Item {
+model Items {
   id         BigInt   @id @default(autoincrement())
   quantity   Int
   name       String
-  categoryId BigInt
-  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId BigInt @map("category_id")
+  category   Categories @relation(fields: [categoryId], references: [id])
   price      Decimal
   createdAt  DateTime @default(now())
 }
 
-model Category {
+model Categories {
   id    BigInt @id @default(autoincrement())
   name  String
-  items Item[]
+  items Items[]
 }
