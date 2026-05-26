@@ -15,13 +15,13 @@ const data = {
   navMain: [
     {
       title: 'Home',
-      url: '#',
+      url: '/',
       icon: <House />,
       isActive: true,
     },
     {
       title: 'Table',
-      url: '#',
+      url: '/table',
       icon: <Table />,
     },
     {

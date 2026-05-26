@@ -3,15 +3,25 @@ import App from '@/App';
 import RootLayout from '@/components/RootLayout';
 import { Outlet } from 'react-router-dom';
 import MainPage from '@/pages/Main-Page';
+import TablePage from '@/pages/table-page';
+
 export const router = createBrowserRouter([
   {
     path: '/',
     element: (
       <RootLayout>
         <Outlet />
-        <MainPage />
       </RootLayout>
     ),
-    children: [],
+    children: [
+      {
+        index: true,
+        element: <MainPage />,
+      },
+      {
+        path: 'table',
+        element: <TablePage />,
+      },
+    ],
   },
 ]);

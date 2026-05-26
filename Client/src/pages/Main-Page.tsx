@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Card } from '@/components/main-dashboard/Card';
 import { fetchSummary } from '@/api/inventory/summary';
 import { MiniCard } from '@/components/main-dashboard/mini-card';
-// Define a type for your state so TypeScript can help you!
+
 interface SummaryState {
   totalWorth: number;
   totalUniqueItems: number;

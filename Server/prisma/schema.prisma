@@ -14,7 +14,7 @@ model Items {
   categoryId BigInt @map("category_id")
   category   Categories @relation(fields: [categoryId], references: [id])
   price      Decimal
-  createdAt  DateTime @default(now())
+  createdAt  DateTime @default(now()) @map("created_at")
 }
 
 model Categories {
