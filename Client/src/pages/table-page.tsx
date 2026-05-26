@@ -9,38 +9,57 @@ import {
 import { fetchDefaultTable, fetchSearchTable } from '@/api/table/table';
 import { Search } from 'lucide-react';
 import type { Item } from '../../../Server/src/validators/product.validators';
-import { useDebounce } from '@/hooks/useDebounce';
+
 const columnHelper = createColumnHelper<Item>();
 
+// ✅ Name column now has text-red-400 via cell renderer
 const columns = [
   columnHelper.accessor('id', { header: 'ID' }),
-  columnHelper.accessor('name', { header: 'Product Name' }),
+  columnHelper.accessor('name', {
+    header: 'Product Name',
+    cell: (info) => <span className='text-white'>{info.getValue()}</span>,
+  }),
   columnHelper.accessor('quantity', { header: 'Stock' }),
+  columnHelper.accessor('category.name', {
+    id: 'category_name',
+    header: 'Category',
+  }),
   columnHelper.accessor('price', {
     header: 'Price',
-    cell: (info) => `$${Number(info.getValue()).toFixed(2)}`,
+    cell: (info) => {
+      const formattedPrice = `$${Number(info.getValue()).toFixed(2)}`;
+      return <span className='text-green-300'>{formattedPrice}</span>;
+    },
   }),
 ];
+
+const CATEGORIES = ['All', 'Dairy', 'Produce', 'Meat', 'Bakery', 'Beverages'];
 
 function TablePage() {
   const [data, setData] = useState<Item[]>([]);
   const [pageCount, setPageCount] = useState(0);
   const [pageIndex, setPageIndex] = useState(0);
   const [searchRaw, setSearchRaw] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('All');
   const [loading, setLoading] = useState(true);
+
   const pagination = useMemo(() => ({ pageIndex, pageSize: 20 }), [pageIndex]);
 
   useEffect(() => {
     const getData = async () => {
       setLoading(true);
       const apiPage = pageIndex + 1;
+      const activeCategory =
+        categoryFilter !== 'All' ? categoryFilter : undefined;
+
       let userType;
       if (searchRaw.trim() === '') {
-        userType = await fetchDefaultTable(apiPage);
+        userType = await fetchDefaultTable(apiPage, activeCategory);
       } else {
         setPageIndex(0);
-        userType = await fetchSearchTable(searchRaw, apiPage);
+        userType = await fetchSearchTable(searchRaw, apiPage, activeCategory);
       }
+
       if (userType) {
         setData(userType.data);
         setPageCount(userType.meta.pageCount);
@@ -48,12 +67,17 @@ function TablePage() {
       setLoading(false);
     };
     getData();
-  }, [pageIndex, searchRaw]);
+  }, [pageIndex, searchRaw, categoryFilter]);
+
+  const handleCategoryChange = (value: string) => {
+    setPageIndex(0);
+    setCategoryFilter(value);
+  };
 
   const table = useReactTable({
     data,
     columns,
-    pageCount: pageCount,
+    pageCount,
     state: { pagination },
     onPaginationChange: (updater) => {
       if (typeof updater === 'function') {
@@ -66,21 +90,40 @@ function TablePage() {
   });
 
   return (
-    <div className='p-6 pt-0 text-white w-full h-full max-w-5xl mx-auto '>
-      <div className='relative w-full max-w-sm mb-2'>
-        <Search className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4' />
-        <input
-          type='text'
-          placeholder='Search items (e.g. milk)...'
-          value={searchRaw}
-          onChange={(e) => setSearchRaw(e.target.value)}
-          className='w-full pl-10 pr-4 py-2 text-sm bg-primary-color border border-gray-main rounded-lg
-                     text-white placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors'
-        />
+    <div className='p-6 pt-0 text-white w-full h-full max-w-5xl mx-auto'>
+      <div className='bg-primary-color p-4 rounded-t-lg border border-gray-main border-b-0'>
+        <div className='flex items-center gap-3 flex-wrap'>
+          <div className='flex w-full max-w-sm border border-gray-main rounded-lg bg-white/5 pl-2'>
+            <Search className='translate-y-1/2 text-gray-400 w-4 h-4 mr-1' />
+            <input
+              type='text'
+              placeholder='Search items (e.g. milk)...'
+              value={searchRaw}
+              onChange={(e) => setSearchRaw(e.target.value)}
+              className='w-full p-2 text-sm text-white placeholder-gray-light focus:outline-none focus:border-gray-500 transition-colors bg-transparent'
+            />
+          </div>
+
+          <select
+            value={categoryFilter}
+            onChange={(e) => handleCategoryChange(e.target.value)}
+            className='p-2 text-sm rounded-lg border border-gray-main bg-white/5 text-white focus:outline-none cursor-pointer'
+          >
+            {CATEGORIES.map((cat) => (
+              <option
+                key={cat}
+                value={cat}
+                className='bg-primary-color text-white'
+              >
+                {cat}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      <table className='w-full   border border-gray-main bg-primary-color overflow-hidden'>
-        <thead className=' bg-background-main text-left '>
+      <table className='w-full border border-gray-main bg-primary-color overflow-hidden text-gray-subtle'>
+        <thead className='bg-background-main text-left'>
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
@@ -109,8 +152,8 @@ function TablePage() {
             </tr>
           ) : data.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className='text-center p-6 '>
-                Loading inventory stock...
+              <td colSpan={columns.length} className='text-center p-6'>
+                No items found.
               </td>
             </tr>
           ) : (

@@ -11,7 +11,6 @@ const SearchInput = ({ onSearchChange }: SearchInputProps) => {
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebounce(query, 300);
 
-  // Whenever the debounced value updates, notify the parent table page
   useEffect(() => {
     onSearchChange(debouncedQuery);
   }, [debouncedQuery, onSearchChange]);

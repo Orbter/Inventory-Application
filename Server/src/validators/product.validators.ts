@@ -7,6 +7,12 @@ const ItemSchema = z.object({
   categoryId: z.number(),
   price: z.number().positive(),
   createdAt: z.date(),
+  category: z
+    .object({
+      id: z.number(),
+      name: z.string(),
+    })
+    .optional(),
 });
 
 const CategorySchema = z.object({

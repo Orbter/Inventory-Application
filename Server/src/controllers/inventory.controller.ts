@@ -8,28 +8,23 @@ const handleInventory = async (req: Request, res: Response) => {
     const pageSize = parseInt(req.query.pageSize as string) || 20;
     const skip = (page - 1) * pageSize;
 
-    const [itemsRaw, totalCount] = await prisma.$transaction([
+    const [item, totalCount] = await prisma.$transaction([
       prisma.items.findMany({
         skip: skip,
         take: pageSize,
         orderBy: { id: 'asc' },
+        include: {
+          category: true,
+        },
       }),
       prisma.items.count(),
     ]);
 
-    const safeData = itemsRaw.map((item) => ({
-      ...item,
-      id: Number(item.id),
-      categoryId: Number(item.categoryId),
-      price: Number(item.price),
-    }));
-    const totalCountSafe = Number(totalCount);
-
     return res.status(200).json({
-      data: safeData,
+      data: item,
       meta: {
-        totalCount: totalCountSafe,
-        pageCount: Math.ceil(totalCountSafe / pageSize),
+        totalCount: totalCount,
+        pageCount: Math.ceil(totalCount / pageSize),
         page,
         pageSize,
       },
@@ -47,7 +42,7 @@ const handleSearch = async (req: Request, res: Response) => {
     const pageSize = 20;
     const skip = (page - 1) * pageSize;
 
-    const [itemsRaw, totalCount] = await prisma.$transaction([
+    const [items, totalCount] = await prisma.$transaction([
       prisma.items.findMany({
         skip: skip,
         take: pageSize,
@@ -58,6 +53,9 @@ const handleSearch = async (req: Request, res: Response) => {
           },
         },
         orderBy: { id: 'asc' },
+        include: {
+          category: true,
+        },
       }),
       prisma.items.count({
         where: {
@@ -68,18 +66,12 @@ const handleSearch = async (req: Request, res: Response) => {
         },
       }),
     ]);
-    const safeData = itemsRaw.map((item) => ({
-      ...item,
-      id: Number(item.id),
-      categoryId: Number(item.categoryId),
-      price: Number(item.price),
-    }));
-    const totalCountSafe = Number(totalCount);
+
     return res.status(200).json({
-      data: safeData,
+      data: items,
       meta: {
-        totalCount: totalCountSafe,
-        pageCount: Math.ceil(totalCountSafe / pageSize),
+        totalCount: totalCount,
+        pageCount: Math.ceil(totalCount / pageSize),
         page,
         pageSize,
       },

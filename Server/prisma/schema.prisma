@@ -8,17 +8,17 @@ datasource db {
 }
 
 model Items {
-  id         BigInt   @id @default(autoincrement())
+  id         Int   @id @default(autoincrement())
   quantity   Int
   name       String
-  categoryId BigInt @map("category_id")
+  categoryId Int @map("category_id")
   category   Categories @relation(fields: [categoryId], references: [id])
   price      Decimal
   createdAt  DateTime @default(now()) @map("created_at")
 }
 
 model Categories {
-  id    BigInt @id @default(autoincrement())
+  id    Int @id @default(autoincrement())
   name  String
   items Items[]
 }
