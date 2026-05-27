@@ -4,28 +4,38 @@ import { prisma } from '@/prisma';
 
 const handleInventory = async (req: Request, res: Response) => {
   try {
-    const page = parseInt(req.query.page as string) || 1;
+    const { search, filter, page } = req.query;
+    const pageNum = parseInt(page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 20;
-    const skip = (page - 1) * pageSize;
+    const skip = (pageNum - 1) * pageSize;
 
-    const [item, totalCount] = await prisma.$transaction([
+    const where = {
+      ...(search && {
+        name: { contains: search as string, mode: 'insensitive' as const },
+      }),
+      ...(filter &&
+        filter !== 'all' && { categoryId: { equals: Number(filter) } }),
+    };
+
+    const [items, totalCount] = await prisma.$transaction([
       prisma.items.findMany({
-        skip: skip,
+        skip,
         take: pageSize,
+        where,
         orderBy: { id: 'asc' },
         include: {
           category: true,
         },
       }),
-      prisma.items.count(),
+      prisma.items.count({ where }),
     ]);
 
     return res.status(200).json({
-      data: item,
+      data: items,
       meta: {
-        totalCount: totalCount,
+        totalCount,
         pageCount: Math.ceil(totalCount / pageSize),
-        page,
+        page: pageNum,
         pageSize,
       },
     });

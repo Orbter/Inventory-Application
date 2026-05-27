@@ -2,7 +2,8 @@
 import { z } from 'zod';
 
 export const InventorySearchQuerySchema = z.object({
-  query: z.string().trim().max(100, 'Search query is too long'),
+  search: z.string().trim().optional(),
+  filter: z.string().optional(),
   page: z
     .string()
     .optional()

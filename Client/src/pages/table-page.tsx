@@ -6,13 +6,16 @@ import {
   flexRender,
   createColumnHelper,
 } from '@tanstack/react-table';
-import { fetchDefaultTable, fetchSearchTable } from '@/api/table/table';
+import {
+  fetchDefaultTable,
+  fetchSearchTable,
+  getCategories,
+} from '@/api/table/table';
 import { Search } from 'lucide-react';
 import type { Item } from '../../../Server/src/validators/product.validators';
 
 const columnHelper = createColumnHelper<Item>();
 
-// ✅ Name column now has text-red-400 via cell renderer
 const columns = [
   columnHelper.accessor('id', { header: 'ID' }),
   columnHelper.accessor('name', {
@@ -33,14 +36,15 @@ const columns = [
   }),
 ];
 
-const CATEGORIES = ['All', 'Dairy', 'Produce', 'Meat', 'Bakery', 'Beverages'];
-
 function TablePage() {
   const [data, setData] = useState<Item[]>([]);
   const [pageCount, setPageCount] = useState(0);
   const [pageIndex, setPageIndex] = useState(0);
   const [searchRaw, setSearchRaw] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [allCategory, setAllCategory] = useState<
+    { id: number; name: string }[]
+  >([]);
   const [loading, setLoading] = useState(true);
 
   const pagination = useMemo(() => ({ pageIndex, pageSize: 20 }), [pageIndex]);
@@ -49,19 +53,17 @@ function TablePage() {
     const getData = async () => {
       setLoading(true);
       const apiPage = pageIndex + 1;
-      const activeCategory =
-        categoryFilter !== 'All' ? categoryFilter : undefined;
+      const search = searchRaw.trim();
+      const categories = await getCategories();
+      const userType = await fetchDefaultTable({
+        searchQuery: search,
+        filterType: categoryFilter,
+        pageNum: apiPage,
+      });
 
-      let userType;
-      if (searchRaw.trim() === '') {
-        userType = await fetchDefaultTable(apiPage, activeCategory);
-      } else {
-        setPageIndex(0);
-        userType = await fetchSearchTable(searchRaw, apiPage, activeCategory);
-      }
-
-      if (userType) {
+      if (userType && userType.data) {
         setData(userType.data);
+        setAllCategory(categories.data);
         setPageCount(userType.meta.pageCount);
       }
       setLoading(false);
@@ -109,13 +111,16 @@ function TablePage() {
             onChange={(e) => handleCategoryChange(e.target.value)}
             className='p-2 text-sm rounded-lg border border-gray-main bg-white/5 text-white focus:outline-none cursor-pointer'
           >
-            {CATEGORIES.map((cat) => (
+            <option value='all' className='bg-primary-color text-white'>
+              All
+            </option>
+            {allCategory.map((cat) => (
               <option
-                key={cat}
-                value={cat}
+                key={cat.id}
+                value={cat.id}
                 className='bg-primary-color text-white'
               >
-                {cat}
+                {cat.name}
               </option>
             ))}
           </select>
