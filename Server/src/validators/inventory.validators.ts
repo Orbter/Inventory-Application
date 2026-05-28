@@ -1,4 +1,3 @@
-// server/src/validators/inventory.validators.ts
 import { z } from 'zod';
 
 export const InventorySearchQuerySchema = z.object({

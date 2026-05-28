@@ -25,8 +25,16 @@ const SummerySchema = z.object({
   totalUniqueItems: z.number(),
   popularItems: z.array(ItemSchema),
 });
+
+const ItemCreateSchema = z.object({
+  name: z.string(),
+  quantity: z.number().positive().max(999),
+  category: z.string(),
+  price: z.number().positive(),
+});
+
 type Item = z.infer<typeof ItemSchema>;
 type Category = z.infer<typeof CategorySchema>;
 type Summery = z.infer<typeof SummerySchema>;
 
-export { Item, Category, Summery };
+export { Item, Category, Summery, ItemCreateSchema };

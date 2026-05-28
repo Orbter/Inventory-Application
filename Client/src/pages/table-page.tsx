@@ -6,12 +6,10 @@ import {
   flexRender,
   createColumnHelper,
 } from '@tanstack/react-table';
-import {
-  fetchDefaultTable,
-  fetchSearchTable,
-  getCategories,
-} from '@/api/table/table';
+import { fetchDefaultTable, getCategories } from '@/api/table/table';
 import { Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { NewItemRow } from '@/components/table/new-item-row';
 import type { Item } from '../../../Server/src/validators/product.validators';
 
 const columnHelper = createColumnHelper<Item>();
@@ -46,15 +44,29 @@ function TablePage() {
     { id: number; name: string }[]
   >([]);
   const [loading, setLoading] = useState(true);
-
+  const [isAdding, setIsAdding] = useState(false);
+  const [refresh, setRefresh] = useState(false);
   const pagination = useMemo(() => ({ pageIndex, pageSize: 20 }), [pageIndex]);
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categories = await getCategories();
+        if (categories && categories.data) {
+          setAllCategory(categories.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch categories', err);
+      }
+    };
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     const getData = async () => {
       setLoading(true);
       const apiPage = pageIndex + 1;
       const search = searchRaw.trim();
-      const categories = await getCategories();
+
       const userType = await fetchDefaultTable({
         searchQuery: search,
         filterType: categoryFilter,
@@ -63,13 +75,14 @@ function TablePage() {
 
       if (userType && userType.data) {
         setData(userType.data);
-        setAllCategory(categories.data);
         setPageCount(userType.meta.pageCount);
       }
       setLoading(false);
+      setRefresh(false);
     };
+
     getData();
-  }, [pageIndex, searchRaw, categoryFilter]);
+  }, [pageIndex, searchRaw, categoryFilter, refresh]);
 
   const handleCategoryChange = (value: string) => {
     setPageIndex(0);
@@ -93,37 +106,46 @@ function TablePage() {
 
   return (
     <div className='p-6 pt-0 text-white w-full h-full max-w-5xl mx-auto'>
-      <div className='bg-primary-color p-4 rounded-t-lg border border-gray-main border-b-0'>
-        <div className='flex items-center gap-3 flex-wrap'>
-          <div className='flex w-full max-w-sm border border-gray-main rounded-lg bg-white/5 pl-2'>
-            <Search className='translate-y-1/2 text-gray-400 w-4 h-4 mr-1' />
-            <input
-              type='text'
-              placeholder='Search items (e.g. milk)...'
-              value={searchRaw}
-              onChange={(e) => setSearchRaw(e.target.value)}
-              className='w-full p-2 text-sm text-white placeholder-gray-light focus:outline-none focus:border-gray-500 transition-colors bg-transparent'
-            />
+      <div className='bg-primary-color p-4 rounded-t-lg border border-gray-main border-b-0 '>
+        <div className='flex justify-between'>
+          <div className='flex items-center gap-3 flex-1 '>
+            <div className='flex w-full max-w-sm border border-gray-main rounded-lg bg-white/5 pl-2'>
+              <Search className='translate-y-1/2 text-gray-400 w-4 h-4 mr-1' />
+              <input
+                type='text'
+                placeholder='Search items (e.g. milk)...'
+                value={searchRaw}
+                onChange={(e) => setSearchRaw(e.target.value)}
+                className='w-full p-2 text-sm text-white placeholder-gray-light focus:outline-none focus:border-gray-500 transition-colors bg-transparent'
+              />
+            </div>
+
+            <select
+              value={categoryFilter}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+              className='p-2 text-sm rounded-lg border border-gray-main bg-white/5 text-white focus:outline-none cursor-pointer'
+            >
+              <option value='all' className='bg-primary-color text-white'>
+                All
+              </option>
+              {allCategory.map((cat) => (
+                <option
+                  key={cat.id}
+                  value={cat.id}
+                  className='bg-primary-color text-white'
+                >
+                  {cat.name}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <select
-            value={categoryFilter}
-            onChange={(e) => handleCategoryChange(e.target.value)}
-            className='p-2 text-sm rounded-lg border border-gray-main bg-white/5 text-white focus:outline-none cursor-pointer'
+          <Button
+            onClick={() => setIsAdding(true)}
+            className='bg-blue-900 p-4 rounded-lg cursor-pointer hover:bg-blue-900/60'
           >
-            <option value='all' className='bg-primary-color text-white'>
-              All
-            </option>
-            {allCategory.map((cat) => (
-              <option
-                key={cat.id}
-                value={cat.id}
-                className='bg-primary-color text-white'
-              >
-                {cat.name}
-              </option>
-            ))}
-          </select>
+            New Item+
+          </Button>
         </div>
       </div>
 
@@ -146,6 +168,14 @@ function TablePage() {
           ))}
         </thead>
         <tbody>
+          {isAdding && (
+            <NewItemRow
+              categories={allCategory}
+              onSave={setRefresh}
+              onCancel={() => setIsAdding(false)}
+            />
+          )}
+
           {loading ? (
             <tr>
               <td

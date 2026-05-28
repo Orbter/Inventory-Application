@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '@/prisma';
 
-export const handleSummary = async (req: Request, res: Response) => {
+const handleSummary = async (req: Request, res: Response) => {
   try {
     const financialResult = await prisma.$queryRaw<
       Array<{ totalWorth: number; totalUniqueItems: number }>
@@ -48,3 +48,35 @@ export const handleSummary = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Error fetching items from DB' });
   }
 };
+const createItem = async (req: Request, res: Response) => {
+  try {
+    const { name, quantity, categoryText, price } = req.body;
+    const categoryExist = await prisma.categories.findFirst({
+      where: {
+        name: {
+          contains: categoryText,
+          mode: 'insensitive',
+        },
+      },
+    });
+    let categoryId: number;
+
+    if (categoryExist !== null) {
+      categoryId = categoryExist.id;
+    } else {
+      const newCategory = await prisma.categories.create({
+        data: { name: categoryText },
+      });
+      categoryId = newCategory.id;
+    }
+
+    const newItem = await prisma.items.create({
+      data: { name, quantity, categoryId, price },
+    });
+    return res.status(200).json({ item: newItem });
+  } catch (error) {
+    console.error('Database creating item failed:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+export { handleSummary, createItem };

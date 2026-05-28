@@ -1,15 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError, z } from 'zod';
-import { InventorySearchQuerySchema } from '@/validators/inventory.validators';
+import { ItemCreateSchema } from '@/validators/product.validators';
 
-const validateInventory = async (
+export const validateCreateItem = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const parsedQuery = await InventorySearchQuerySchema.parseAsync(req.query);
-    Object.assign(req.query, parsedQuery);
+    const parsedQuery = await ItemCreateSchema.parseAsync(req.body);
+    Object.assign(req.body, parsedQuery);
 
     return next();
   } catch (error) {
@@ -19,7 +19,7 @@ const validateInventory = async (
         errors: error,
       });
     }
+
     return next(error);
   }
 };
-export { validateInventory };
