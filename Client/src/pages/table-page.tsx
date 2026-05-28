@@ -7,11 +7,12 @@ import {
   createColumnHelper,
 } from '@tanstack/react-table';
 import { fetchDefaultTable, getCategories } from '@/api/table/table';
-import { Search } from 'lucide-react';
+import { Search, Pencil, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NewItemRow } from '@/components/table/new-item-row';
+import { EditButton, DeleteButton } from '@/components/table/buttons';
 import type { Item } from '../../../Server/src/validators/product.validators';
-
+import { createItem } from '@/api/inventory/itemManipulation';
 const columnHelper = createColumnHelper<Item>();
 
 const columns = [
@@ -32,6 +33,23 @@ const columns = [
       return <span className='text-green-300'>{formattedPrice}</span>;
     },
   }),
+  columnHelper.display({
+    id: 'action',
+    header: 'Action',
+    cell: (info) => {
+      const item = info.row.original;
+      return (
+        <div className='flex gap-4 justify-center'>
+          <EditButton
+            onClick={() => info.table.options.meta?.startEditing(item.id)}
+          />
+          <DeleteButton
+            onClick={() => console.log('Delete item ID:', item.id)}
+          />
+        </div>
+      );
+    },
+  }),
 ];
 
 function TablePage() {
@@ -46,7 +64,9 @@ function TablePage() {
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [refresh, setRefresh] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const pagination = useMemo(() => ({ pageIndex, pageSize: 20 }), [pageIndex]);
+
   useEffect(() => {
     const loadCategories = async () => {
       try {
@@ -84,6 +104,37 @@ function TablePage() {
     getData();
   }, [pageIndex, searchRaw, categoryFilter, refresh]);
 
+  const handleCreateItem = async (fields: {
+    name: string;
+    quantity: number;
+    category: string;
+    price: number;
+  }) => {
+    setIsAdding(false);
+    const response = await createItem({ newItem: fields });
+    if (response) {
+      setRefresh(true);
+    }
+  };
+
+  const handleSaveEdit = async (
+    itemId: number,
+    updatedFields: {
+      name: string;
+      quantity: number;
+      category: string;
+      price: number;
+    },
+  ) => {
+    console.log(`Sending Update API Request for ID ${itemId}:`, updatedFields);
+
+    // Example implementation structure once backend patch endpoint is live:
+    // const response = await updateItem(itemId, updatedFields);
+    // if (response) { setRefresh(true); }
+
+    setEditingId(null);
+  };
+
   const handleCategoryChange = (value: string) => {
     setPageIndex(0);
     setCategoryFilter(value);
@@ -102,6 +153,9 @@ function TablePage() {
     },
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
+    meta: {
+      startEditing: (id: number) => setEditingId(id),
+    },
   });
 
   return (
@@ -142,7 +196,7 @@ function TablePage() {
 
           <Button
             onClick={() => setIsAdding(true)}
-            className='bg-blue-900 p-4 rounded-lg cursor-pointer hover:bg-blue-900/60'
+            className='bg-blue-900 p-4 rounded-lg cursor-pointer hover:bg-blue-700'
           >
             New Item+
           </Button>
@@ -171,17 +225,14 @@ function TablePage() {
           {isAdding && (
             <NewItemRow
               categories={allCategory}
-              onSave={setRefresh}
+              onSave={handleCreateItem}
               onCancel={() => setIsAdding(false)}
             />
           )}
 
           {loading ? (
             <tr>
-              <td
-                colSpan={columns.length}
-                className='text-center p-6 text-gray-400 font-medium'
-              >
+              <td colSpan={columns.length} className='text-center p-6'>
                 getting inventory data...
               </td>
             </tr>
@@ -192,18 +243,37 @@ function TablePage() {
               </td>
             </tr>
           ) : (
-            table.getRowModel().rows.map((row) => (
-              <tr
-                key={row.id}
-                className='hover:bg-white/5 transition-colors border-b border-gray-main'
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className='p-3 text-sm'>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))
+            table.getRowModel().rows.map((row) => {
+              const item = row.original;
+
+              if (editingId === item.id) {
+                return (
+                  <NewItemRow
+                    key={`edit-${item.id}`}
+                    item={item}
+                    categories={allCategory}
+                    onSave={(fields) => handleSaveEdit(item.id, fields)}
+                    onCancel={() => setEditingId(null)}
+                  />
+                );
+              }
+
+              return (
+                <tr
+                  key={row.id}
+                  className='hover:bg-white/5 transition-colors border-b border-gray-main'
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className='p-3 text-sm'>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>

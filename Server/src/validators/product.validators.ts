@@ -32,9 +32,25 @@ const ItemCreateSchema = z.object({
   category: z.string(),
   price: z.number().positive(),
 });
-
+const ItemEditSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  quantity: z.number().positive().max(999),
+  category: z.string(),
+  price: z.number().positive(),
+});
+const ItemDeleteSchema = z.object({
+  id: z.number(),
+});
 type Item = z.infer<typeof ItemSchema>;
 type Category = z.infer<typeof CategorySchema>;
 type Summery = z.infer<typeof SummerySchema>;
 
-export { Item, Category, Summery, ItemCreateSchema };
+export {
+  Item,
+  Category,
+  Summery,
+  ItemCreateSchema,
+  ItemEditSchema,
+  ItemDeleteSchema,
+};

@@ -50,11 +50,12 @@ const handleSummary = async (req: Request, res: Response) => {
 };
 const createItem = async (req: Request, res: Response) => {
   try {
-    const { name, quantity, categoryText, price } = req.body;
+    const { name, quantity, category, price } = req.body;
+    console.log(req.body);
     const categoryExist = await prisma.categories.findFirst({
       where: {
         name: {
-          contains: categoryText,
+          contains: category,
           mode: 'insensitive',
         },
       },
@@ -65,7 +66,7 @@ const createItem = async (req: Request, res: Response) => {
       categoryId = categoryExist.id;
     } else {
       const newCategory = await prisma.categories.create({
-        data: { name: categoryText },
+        data: { name: category },
       });
       categoryId = newCategory.id;
     }
