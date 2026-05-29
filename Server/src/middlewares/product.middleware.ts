@@ -51,8 +51,9 @@ const validateDeleteItem = async (
   next: NextFunction,
 ) => {
   try {
-    const parsedQuery = await ItemDeleteSchema.parseAsync(req.query);
-    Object.assign(req.query, parsedQuery);
+    const parsedQuery = await ItemDeleteSchema.parseAsync(req.params);
+    Object.assign(req.params, parsedQuery);
+    return next();
   } catch (error) {
     if (error instanceof ZodError) {
       return res.status(400).json({

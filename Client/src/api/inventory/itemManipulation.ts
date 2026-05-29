@@ -7,13 +7,10 @@ interface CreateItemProps {
   };
 }
 interface editItemProps {
-  newItem: {
-    id: number;
-    name: string;
-    quantity: number;
-    category: string;
-    price: number;
-  };
+  name: string;
+  quantity: number;
+  category: string;
+  price: number;
 }
 
 const createItem = async ({ newItem }: CreateItemProps) => {
@@ -31,12 +28,12 @@ const createItem = async ({ newItem }: CreateItemProps) => {
   }
 };
 
-const editItem = async ({ newItem }: editItemProps) => {
+const editItem = async (id: number, newItem: editItemProps) => {
   try {
     const response = await fetch(`http://localhost:3001/api/item/edit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newItem),
+      body: JSON.stringify({ id, ...newItem }),
     });
     if (!response.ok) throw new Error('Network response was not ok');
     return await response.json();
@@ -45,7 +42,7 @@ const editItem = async ({ newItem }: editItemProps) => {
     return null;
   }
 };
-const deleteItem = async ({ itemId }: number) => {
+const deleteItem = async (itemId: number) => {
   try {
     const response = await fetch(
       `http://localhost:3001/api/item/delete/${itemId}`,

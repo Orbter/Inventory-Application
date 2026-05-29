@@ -80,4 +80,57 @@ const createItem = async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-export { handleSummary, createItem };
+
+const handleEditItem = async (req: Request, res: Response) => {
+  try {
+    const { id, name, quantity, category, price } = req.body;
+    const categoryExist = await prisma.categories.findFirst({
+      where: {
+        name: {
+          contains: category,
+          mode: 'insensitive',
+        },
+      },
+    });
+    let categoryId;
+    if (categoryExist !== null) {
+      categoryId = categoryExist.id;
+    } else {
+      const newCategory = await prisma.categories.create({
+        data: { name: category },
+      });
+      categoryId = newCategory.id;
+    }
+    const updateUser = await prisma.items.update({
+      where: {
+        id: id,
+      },
+      data: {
+        name: name,
+        quantity: quantity,
+        categoryId: categoryId,
+        price: price,
+      },
+    });
+    return res.status(200).json({ item: updateUser });
+  } catch (error) {
+    console.error('Database editing item failed:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+const handleDeleteItem = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    let idNum = Number(id);
+
+    const deleteItem = await prisma.items.delete({
+      where: { id: idNum },
+    });
+    return res.status(200).json(true);
+  } catch (error) {
+    console.error('Database delete item failed:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+export { handleSummary, createItem, handleEditItem, handleDeleteItem };

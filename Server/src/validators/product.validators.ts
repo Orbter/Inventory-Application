@@ -28,19 +28,19 @@ const SummerySchema = z.object({
 
 const ItemCreateSchema = z.object({
   name: z.string(),
-  quantity: z.number().positive().max(999),
+  quantity: z.number().nonnegative().max(999),
   category: z.string(),
-  price: z.number().positive(),
+  price: z.coerce.number().positive(),
 });
 const ItemEditSchema = z.object({
-  id: z.number(),
+  id: z.coerce.number(),
   name: z.string(),
-  quantity: z.number().positive().max(999),
+  quantity: z.coerce.number().nonnegative().max(999),
   category: z.string(),
-  price: z.number().positive(),
+  price: z.coerce.number().positive(),
 });
 const ItemDeleteSchema = z.object({
-  id: z.number(),
+  id: z.coerce.number(),
 });
 type Item = z.infer<typeof ItemSchema>;
 type Category = z.infer<typeof CategorySchema>;

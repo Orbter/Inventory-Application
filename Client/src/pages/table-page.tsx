@@ -12,7 +12,11 @@ import { Button } from '@/components/ui/button';
 import { NewItemRow } from '@/components/table/new-item-row';
 import { EditButton, DeleteButton } from '@/components/table/buttons';
 import type { Item } from '../../../Server/src/validators/product.validators';
-import { createItem } from '@/api/inventory/itemManipulation';
+import {
+  createItem,
+  editItem,
+  deleteItem,
+} from '@/api/inventory/itemManipulation';
 const columnHelper = createColumnHelper<Item>();
 
 const columns = [
@@ -44,7 +48,7 @@ const columns = [
             onClick={() => info.table.options.meta?.startEditing(item.id)}
           />
           <DeleteButton
-            onClick={() => console.log('Delete item ID:', item.id)}
+            onClick={() => info.table.options.meta?.deleteCurrentItem(item.id)}
           />
         </div>
       );
@@ -126,15 +130,20 @@ function TablePage() {
       price: number;
     },
   ) => {
-    console.log(`Sending Update API Request for ID ${itemId}:`, updatedFields);
-
-    // Example implementation structure once backend patch endpoint is live:
-    // const response = await updateItem(itemId, updatedFields);
-    // if (response) { setRefresh(true); }
+    const response = await editItem(itemId, updatedFields);
+    if (response) {
+      setRefresh(true);
+    }
 
     setEditingId(null);
   };
 
+  const handleDeleteItem = async (id: number) => {
+    const response = await deleteItem(id);
+    if (response) {
+      setRefresh(true);
+    }
+  };
   const handleCategoryChange = (value: string) => {
     setPageIndex(0);
     setCategoryFilter(value);
@@ -155,6 +164,7 @@ function TablePage() {
     manualPagination: true,
     meta: {
       startEditing: (id: number) => setEditingId(id),
+      deleteCurrentItem: (id: number) => handleDeleteItem(id),
     },
   });
 
